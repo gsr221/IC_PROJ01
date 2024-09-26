@@ -65,14 +65,7 @@ class AppConfig():
                          command = lambda: self.f.calcDesqButtFun(self.tvBarrasDeseq))
         self.calcDesesqButton.place(relx=0.01, rely=0.02, height=25, width=150)
         
-    def SetBalance(self):
-        #Botão para equilibrar o sistema
-        self.equilibraButton = ttk.Button(self.bottonFrame,
-                         text = 'Equilibrar',
-                         style= "btn1.TButton",
-                         command = ...)
-        self.equilibraButton.place(relx=0.01, rely=0.02, height=25, width=150)
-        
+    def SetBalance(self):        
         #Visor das barras possíveis de alocar dispositivo
         self.tvBarrasAlocadas = ttk.Treeview(self.bottonFrame)
         self.tvBarrasAlocadas.place(relx=0.01, rely=0.13, relwidth=0.98, relheight=0.82)
@@ -84,4 +77,9 @@ class AppConfig():
         self.treescrollx2.pack(side="bottom", fill='x')
         self.treescrolly2.pack(side="right", fill='y')
         
-    
+        #Botão para equilibrar o sistema
+        self.equilibraButton = ttk.Button(self.bottonFrame,
+                         text = 'Equilibrar',
+                         style= "btn1.TButton",
+                         command = lambda: self.f.equilButtFun(self.tvBarrasAlocadas, self.potMAEntry, self.potMBEntry, self.potMCEntry))
+        self.equilibraButton.place(relx=0.01, rely=0.02, height=25, width=150)  

@@ -1,6 +1,7 @@
 import win32com.client
 import numpy as np
-import json
+import pandas as pd
+import consts as c
 
 class DSS():
     def __init__(self):
@@ -44,3 +45,16 @@ class DSS():
 
     def exportSeqVoltages(self):
         self.dssTxt.Command = "Export seqVoltages"
+        
+    def dfSeqVolt(self):
+        self.clearAll()
+        self.compileFile(c.link_ieee13bus)
+        self.solve(1)
+        self.exportSeqVoltages()
+        
+        try:
+            dfSeqVoltages = pd.read_csv(c.seqVoltageDir)
+        except FileNotFoundError:
+            return pd.DataFrame()
+        
+        return dfSeqVoltages
