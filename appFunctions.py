@@ -38,12 +38,12 @@ class AppFunctions():
         return None
     
     def equilButtFun(self, tv, entryPma, entryPmb, entryPmc):
-        self.clearData(tv)
         pms = [entryPma.get(), entryPmb.get(), entryPmc.get()]
-        pms = [int(pm) for pm in pms]
         if '' in pms:
             tk.messagebox.showerror("Informativo", "Insira valores para Pma, Pmb e Pmc")
             return None
+        self.clearData(tv)
+        pms = [int(pm) for pm in pms]
         results, log, dicMelhoresIndiv = self.ag.execAg(pms=pms,
                                                         cxpb=0.8,
                                                         mutpb=0.1,
