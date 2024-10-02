@@ -56,11 +56,7 @@ class AppFunctions():
         #==Converte os valores para inteiros==#
         pms = [int(pm) for pm in pms]
         #==Executa o algoritmo genético==#
-        results, log, dicMelhoresIndiv = self.ag.execAg(pms=pms,
-                                                        cxpb=0.8,
-                                                        mutpb=0.1,
-                                                        ngen=400,
-                                                        numRep=1)
+        results, log, dicMelhoresIndiv = self.ag.execAg(pms=pms, numRep=5)
         #==Cria uma TreeView com os melhores indivíduos==#
         dfMelhoresIndiv = pd.DataFrame(dicMelhoresIndiv)
         

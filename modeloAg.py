@@ -2,6 +2,7 @@ from deap import creator, base, tools, algorithms
 from odFunctions import DSS
 import consts as c
 import random
+import pandas as pd
 
 class AG():
     def __init__(self):
@@ -12,6 +13,8 @@ class AG():
         creator.create("fitnessMulti", base.Fitness, weights=(-1.0, ))
         #Criando a classe do indivíduo
         creator.create("estrIndiv", list, fitness = creator.fitnessMulti)
+        self.indivDic = {"cromossomo": [], 
+                         "fob": []}
        
         
     def alocaPot(self, barramento, listaPoten):
@@ -44,12 +47,14 @@ class AG():
             abs(pots[1]) - self.pmList[1],
             abs(pots[2]) - self.pmList[2],
             sum(pots),
-            -sum(pots),
-            fobVal - 2
+            -sum(pots)
         ]
         
         penalidade = sum(max(0, restricao) for restricao in restricoes)
         penalidadeVal = 1000
+        
+        self.indivDic["cromossomo"].append(indiv)
+        self.indivDic["fob"].append(fobVal + penalidadeVal * penalidade)
         
         return fobVal + penalidadeVal * penalidade,
     
@@ -110,14 +115,29 @@ class AG():
     
     
     def criaCrom (self):
-        crom = [random.randint(-self.pmList[0], self.pmList[0]), 
-                random.randint(-self.pmList[1], self.pmList[1]), 
-                random.randint(-self.pmList[2], self.pmList[2]),
-                random.randint(0,len(self.barras))]
+        g1 = random.randint(-self.pmList[0], self.pmList[0])
+        g2 = random.randint(-self.pmList[1], self.pmList[1])
+        g3 = - g1 - g2
+        indiv = [g1, 
+                g2, 
+                g3,
+                random.randint(0,len(self.barras))
+                ]
         
-        return crom
+        return indiv
     
-    def execAg(self, pms, cxpb, mutpb, ngen, numRep):
+    
+    def cruzamentoFun(self, indiv1, indiv2):
+        for gene in range(len(indiv1)):
+            t = round(random.uniform(0, 1), 2)
+            # Use o valor de t conforme necessário
+            indiv1[gene] = int(t*indiv1[gene] + (1-t)*indiv2[gene])
+            indiv2[gene] = int((1-t)*indiv1[gene] + t*indiv2[gene])
+            
+        return indiv1, indiv2
+    
+    
+    def execAg(self, pms, probCruz=0.8, probMut=0, numGen=100, numRep=1):
         #Objeto toolbox
         toolbox = base.Toolbox()
         #Lista com os valores de Potencia máxima por fase
@@ -134,22 +154,24 @@ class AG():
             toolbox.register("pop", tools.initRepeat, list, toolbox.indiv)
             
             #Criando uma população
-            populacao = toolbox.pop(n=10)
+            populacao = toolbox.pop(n=15)
             
             #Definindo maneiras de cruzamento e de mutação
-            toolbox.register("mate", tools.cxOnePoint)
+            toolbox.register("mate", self.cruzamentoFun)
             toolbox.register("mutate", self.mutateFun)
             
             #Definindo o tipo de seleção
-            toolbox.register("select", tools.selTournament, tournsize=3)
+            toolbox.register("select", tools.selTournament, tournsize=5)
             
             #Definindo a fob e as restrições
             toolbox.register("evaluate", self.FOB)
             # toolbox.register("evaluate", tools.DeltaPenalty(self.restricao, 1e6, self.penalidade))
             
             hof = tools.HallOfFame(1)
-            result, log = algorithms.eaSimple(populacao, toolbox, cxpb=0.8, mutpb=0, ngen=400, halloffame=hof, verbose=False)
+            result, log = algorithms.eaSimple(populacao, toolbox, cxpb=probCruz, mutpb=probMut, ngen=numGen, halloffame=hof, verbose=False)
             dicMelhoresIndiv["cromossomos"].append(hof[0])
             dicMelhoresIndiv["fobs"].append(hof[0].fitness.values[0])
+            
+            # print(self.indivDic)
         
         return result, log, dicMelhoresIndiv
