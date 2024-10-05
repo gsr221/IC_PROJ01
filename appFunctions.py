@@ -13,6 +13,8 @@ class AppFunctions():
         #==Objeto da classe DSS e AG==#
         self.dss = DSS()
         self.ag = AG()
+        self.dss.compileFile(c.link_ieee13bus)
+        self.barras = self.dss.BusNames()
     
     #==Limpa os dados da TreeView==#
     def clearData(self, tv):
@@ -30,7 +32,8 @@ class AppFunctions():
         #==Remove as colunas que não serão utilizadas==#
         dfSeqVoltages = dfSeqVoltages.drop(['  p.u.', 'Base kV',' %V0/V1', ' Vresidual', ' %NEMA'], axis=1)
         #==Seleciona as barras com desequilíbrio maior que 2%==#
-        dfBarrasDeseq = dfSeqVoltages.loc[dfSeqVoltages[dfSeqVoltages.columns[3]] > perc]
+        #dfBarrasDeseq = dfSeqVoltages.loc[dfSeqVoltages[dfSeqVoltages.columns[3]] > perc]
+        dfBarrasDeseq = dfSeqVoltages
         #==Cria uma TreeView com as barras desequilibradas==#
         tv["column"] = list(dfBarrasDeseq)
         tv["show"] = "headings"
@@ -56,15 +59,26 @@ class AppFunctions():
         #==Converte os valores para inteiros==#
         pms = [int(pm) for pm in pms]
         #==Executa o algoritmo genético==#
-        results, log, dicMelhoresIndiv = self.ag.execAg(pms=pms, numRep=5)
+        results, log, dicMelhoresIndiv = self.ag.execAg(pms=pms, numRep=1)
         #==Cria uma TreeView com os melhores indivíduos==#
         dfMelhoresIndiv = pd.DataFrame(dicMelhoresIndiv)
         
-        tv["column"] = list(dfMelhoresIndiv)
+        indiv = dicMelhoresIndiv["cromossomos"][0]
+        barra = indiv[-1]
+        pots = indiv[:-1]
+        print(dicMelhoresIndiv)
+        
+        self.ag.alocaPot(self.barras[barra], pots)
+        self.dss.solve(1)
+        
+        dfSeqVoltages = self.dss.dfSeqVolt()
+        dfSeqVoltages = dfSeqVoltages.drop(['  p.u.', 'Base kV',' %V0/V1', ' Vresidual', ' %NEMA'], axis=1)
+        
+        tv["column"] = list(dfSeqVoltages)
         tv["show"] = "headings"
         for column in tv["columns"]:
             tv.heading(column, text=column) 
-        df_rows = dfMelhoresIndiv.to_numpy().tolist()
+        df_rows = dfSeqVoltages.to_numpy().tolist()
         for row in df_rows:
             tv.insert("", "end", values=row)
 

@@ -49,9 +49,6 @@ class DSS():
     
     #==Retorna um DataFrame com as tensões de sequência==#
     def dfSeqVolt(self):
-        self.clearAll()
-        self.compileFile(c.link_ieee13bus)
-        self.solve(1)
         self.exportSeqVoltages()
         
         try:
