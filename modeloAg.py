@@ -124,7 +124,5 @@ class AG():
             result, log = algorithms.eaSimple(populacao, toolbox, cxpb=probCruz, mutpb=probMut, ngen=numGen, halloffame=hof, verbose=False)
             dicMelhoresIndiv["cromossomos"].append(hof[0])
             dicMelhoresIndiv["fobs"].append(hof[0].fitness.values[0])
-
-        print(self.barras)
         
         return result, log, dicMelhoresIndiv
