@@ -16,18 +16,22 @@ class DSS():
             self.dssSolution = self.dssCircuit.Solution
             self.dssBus = self.dssCircuit.ActiveBus
     
+    
     #==Limpa a memoria do openDSS==#
     def clearAll(self):
         self.dssTxt.Command = "ClearAll"
+       
         
     #==Compila o arquivo desejado==#
     def compileFile(self, dssFileName):
         self.dssTxt.Command = "Compile " + dssFileName
+       
         
     #==Soluciona o circuito do arquivo especificado com o loadMult desejado==#
     def solve(self, loadMult):
         self.dssSolution.LoadMult = loadMult
         self.dssSolution.Solve()
+        
         
     #==Retorna o nome de todos os barramentos trifásicos==#
     def BusNames(self):
@@ -43,17 +47,37 @@ class DSS():
         #==Retorna a lista com os nomes do barramentos==#
         return tPBusses
 
+
     #==Exporta as tensões de sequência para um arquivo CSV==#
     def exportSeqVoltages(self):
         self.dssTxt.Command = "Export seqVoltages"
     
+    
     #==Retorna um DataFrame com as tensões de sequência==#
     def dfSeqVolt(self):
+        #==Exporta as tensões de sequência==#
         self.exportSeqVoltages()
         
+        #==Tenta ler o arquivo CSV com as tensões de sequência==#
         try:
             dfSeqVoltages = pd.read_csv(c.seqVoltageDir)
         except FileNotFoundError:
             return pd.DataFrame()
         
         return dfSeqVoltages
+    
+    
+    #==Aloca as potências no barramento==#
+    def alocaPot(self, barramento, listaPoten):
+        #==Limpa a memória do openDSS e compila o arquivo original novamente==#
+        self.dss.clearAll()
+        self.dss.compileFile(c.link_ieee13bus)
+        
+        #==Ativa o barramento desejado==#
+        self.dss.dssCircuit.SetActiveBus(barramento)
+        #==Recebe a tensão base do barramento==#
+        kVBaseBarra = self.dss.dssBus.kVBase
+        #==Aloca as potências no barramento==#
+        for fase in range(3):
+            comando = "New Load.NEW"+str(fase+1)+" Bus1="+str(barramento)+"."+str(fase+1)+" Phases=1 Conn=Wye Model=1 kV="+str(round(kVBaseBarra, 2))+" kW="+str(listaPoten[fase])+" kvar=0"
+            self.dss.dssTxt.Command = comando

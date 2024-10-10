@@ -13,33 +13,26 @@ class AG():
         creator.create("fitnessMulti", base.Fitness, weights=(-1.0, ))
         #Criando a classe do indivíduo
         creator.create("estrIndiv", list, fitness = creator.fitnessMulti)
-        self.indivDic = {"cromossomo": [], 
-                         "fob": []}
-       
         
-    def alocaPot(self, barramento, listaPoten):
-        self.dss.clearAll()
-        self.dss.compileFile(c.link_ieee13bus)
-        self.dss.dssCircuit.SetActiveBus(barramento)
-        kVBaseBarra = self.dss.dssBus.kVBase
-        for fase in range(3):
-            comando = "New Load.NEW"+str(fase+1)+" Bus1="+str(barramento)+"."+str(fase+1)+" Phases=1 Conn=Wye Model=1 kV="+str(round(kVBaseBarra, 2))+" kW="+str(listaPoten[fase])+" kvar=0"
-            self.dss.dssTxt.Command = comando
-        
-        
+    
+    #==Função objetivo==#
     def FOB(self, indiv):
+        #==Recebe os valores de potência máxima e o barramento==#
         barra = indiv[-1]
         pots = indiv[:3]
         
+        #==Verifica se o barramento é válido==#
         if barra > len(self.barras)-1 or barra < 0: return 99999, 
 
-        self.alocaPot(barramento=self.barras[barra], listaPoten=pots)
-        
+        #==Aloca as potências no barramento e resolve o sistema==#
+        self.dss.alocaPot(barramento=self.barras[barra], listaPoten=pots)
         self.dss.solve(1)
         
+        #==Recebe as tensões de sequência e as coloca em um dicionário==#
         dfSeqVoltages = self.dss.dfSeqVolt()
         dicSecVoltages = dfSeqVoltages.to_dict(orient = 'list')
         deseq = dicSecVoltages[' %V2/V1']
+        
         fobVal = max(deseq)
         
         restricoes = [
@@ -53,9 +46,6 @@ class AG():
         
         penalidade = sum(max(0, restricao) for restricao in restricoes)
         penalidadeVal = 1000
-        
-        self.indivDic["cromossomo"].append(indiv)
-        self.indivDic["fob"].append(fobVal + penalidadeVal * penalidade)
         
         return fobVal + penalidadeVal * penalidade,
         
@@ -90,7 +80,7 @@ class AG():
         return newIndiv1, newIndiv2
     
     
-    def execAg(self, pms, probCruz=0.9, probMut=0, numGen=200, numRep=1):
+    def execAg(self, pms, probCruz=0.9, probMut=0, numGen=100, numRep=1):
         #Objeto toolbox
         toolbox = base.Toolbox()
         #Lista com os valores de Potencia máxima por fase
