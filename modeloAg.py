@@ -19,7 +19,8 @@ class AG():
     def FOB(self, indiv):
         #==Recebe os valores de potência máxima e o barramento==#
         barra = indiv[-1]
-        pots = indiv[:3]
+        pots = indiv[:2]
+        pots.append(-pots[0]-pots[1])
         
         #==Verifica se o barramento é válido==#
         if barra > len(self.barras)-1 or barra < 0: return 99999, 
@@ -38,9 +39,7 @@ class AG():
         restricoes = [
             abs(pots[0]) - self.pmList[0],
             abs(pots[1]) - self.pmList[1],
-            abs(pots[2]) - self.pmList[2],
-            sum(pots),
-            -sum(pots),
+            abs(-pots[0] - pots[1]) - self.pmList[2],
             fobVal - 2
         ]
         
@@ -53,10 +52,8 @@ class AG():
     def criaCrom (self):
         g1 = random.randint(-self.pmList[0], self.pmList[0])
         g2 = random.randint(-self.pmList[1], self.pmList[1])
-        g3 = - g1 - g2
         indiv = [g1, 
                 g2, 
-                g3,
                 random.randint(0,len(self.barras))
                 ]
         
@@ -69,10 +66,10 @@ class AG():
     
     
     def cruzamentoFun(self, indiv1, indiv2):
+        t = round(random.uniform(0, 1), 2)
+        newIndiv1 = indiv1
+        newIndiv2 = indiv2
         for gene in range(len(indiv1)):
-            t = round(random.uniform(0, 1), 2)
-            newIndiv1 = indiv1
-            newIndiv2 = indiv2
             # Use o valor de t conforme necessário
             newIndiv1[gene] = int(t*indiv1[gene] + (1-t)*indiv2[gene])
             newIndiv2[gene] = int((1-t)*indiv1[gene] + t*indiv2[gene])
@@ -88,6 +85,15 @@ class AG():
         #Criando uma classe de Fitness minimizado
         dicMelhoresIndiv = {"cromossomos": [],
                             "fobs": []}
+        #Definindo maneiras de cruzamento e de mutação
+        toolbox.register("mate", self.cruzamentoFun)
+        toolbox.register("mutate", self.mutateFun)
+        
+        #Definindo o tipo de seleção
+        toolbox.register("select", tools.selTournament, tournsize=5)
+
+        #Definindo a fob e as restrições
+        toolbox.register("evaluate", self.FOB)
 
         for _ in range(numRep):
             #Definindo como criar um indivíduo (cromossomo) com 4 genes inteiros
@@ -98,17 +104,6 @@ class AG():
 
             #Criando uma população
             populacao = toolbox.pop(n=15)
-
-            #Definindo maneiras de cruzamento e de mutação
-            toolbox.register("mate", self.cruzamentoFun)
-            toolbox.register("mutate", self.mutateFun)
-
-            #Definindo o tipo de seleção
-            toolbox.register("select", tools.selTournament, tournsize=5)
-
-            #Definindo a fob e as restrições
-            toolbox.register("evaluate", self.FOB)
-            # toolbox.register("evaluate", tools.DeltaPenalty(self.restricao, 1e6, self.penalidade))
 
             hof = tools.HallOfFame(1)
             result, log = algorithms.eaSimple(populacao, toolbox, cxpb=probCruz, mutpb=probMut, ngen=numGen, halloffame=hof, verbose=False)

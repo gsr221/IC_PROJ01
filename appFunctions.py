@@ -8,7 +8,7 @@ from modeloAg import AG
 #Porcentagem de desequilíbrio#
 perc = 2
 #Número de repetições do AG#
-numReps = 5
+numReps = 2
 
 class AppFunctions():
     def __init__(self):
@@ -73,16 +73,18 @@ class AppFunctions():
         
         #=Cria o dicionario com as potencias em cada fase, barramento e valor da fob
         dicResultadoAg = {'Pot A':[], 'Pot B':[], 'Pot C':[], 'Barramento':[], 'FOB':[]}
-        chaves = list(dicResultadoAg.keys())
-
-        for idx1 in range(len(dicMelhoresIndiv['cromossomos'])):
-            for idx2 in range(len(chaves)):
-                if idx2 < 3:
-                    dicResultadoAg[chaves[idx2]].append(dicMelhoresIndiv['cromossomos'][idx1][idx2])
-                elif idx2 == 3:
-                    dicResultadoAg[chaves[idx2]].append(self.barras[dicMelhoresIndiv['cromossomos'][idx1][idx2]])
-                else:
-                    dicResultadoAg[chaves[idx2]].append(dicMelhoresIndiv['fobs'][idx1])
+        
+        #==Adiciona os valores no dicionário==#
+        listaPotsBus = dicMelhoresIndiv['cromossomos']
+        listaFobs = dicMelhoresIndiv['fobs']
+        
+        dicResultadoAg['Pot A'] = [listaPotsBus[idx][0] for idx in range(len(listaPotsBus))]
+        dicResultadoAg['Pot B'] = [listaPotsBus[idx][1] for idx in range(len(listaPotsBus))]
+        dicResultadoAg['Pot C'] = [(-listaPotsBus[idx][0]-listaPotsBus[idx][1]) for idx in range(len(listaPotsBus))]
+        
+        dicResultadoAg['Barramento'] = [self.barras[listaPotsBus[idx][2]] for idx in range(len(listaPotsBus))]
+        
+        dicResultadoAg['FOB'] = listaFobs
 
         dfResultadoAg = pd.DataFrame(dicResultadoAg)
 

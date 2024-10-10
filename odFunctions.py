@@ -70,14 +70,14 @@ class DSS():
     #==Aloca as potências no barramento==#
     def alocaPot(self, barramento, listaPoten):
         #==Limpa a memória do openDSS e compila o arquivo original novamente==#
-        self.dss.clearAll()
-        self.dss.compileFile(c.link_ieee13bus)
+        self.clearAll()
+        self.compileFile(c.link_ieee13bus)
         
         #==Ativa o barramento desejado==#
-        self.dss.dssCircuit.SetActiveBus(barramento)
+        self.dssCircuit.SetActiveBus(barramento)
         #==Recebe a tensão base do barramento==#
-        kVBaseBarra = self.dss.dssBus.kVBase
+        kVBaseBarra = self.dssBus.kVBase
         #==Aloca as potências no barramento==#
         for fase in range(3):
             comando = "New Load.NEW"+str(fase+1)+" Bus1="+str(barramento)+"."+str(fase+1)+" Phases=1 Conn=Wye Model=1 kV="+str(round(kVBaseBarra, 2))+" kW="+str(listaPoten[fase])+" kvar=0"
-            self.dss.dssTxt.Command = comando
+            self.dssTxt.Command = comando
