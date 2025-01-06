@@ -2,7 +2,6 @@ from deap import creator, base, tools, algorithms
 from odFunctions import DSS
 import consts as c
 import random
-import pandas as pd
 
 class AG():
     def __init__(self):

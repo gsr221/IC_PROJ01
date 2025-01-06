@@ -81,3 +81,8 @@ class DSS():
         for fase in range(3):
             comando = "New Load.NEW"+str(fase+1)+" Bus1="+str(barramento)+"."+str(fase+1)+" Phases=1 Conn=Wye Model=1 kV="+str(round(kVBaseBarra, 2))+" kW="+str(listaPoten[fase])+" kvar=0"
             self.dssTxt.Command = comando
+            
+            
+    def distsBusses(self):
+        dists = self.dssCircuit.AllBusDistances
+        return dists

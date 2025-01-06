@@ -2,3 +2,7 @@ env/
 __pycache__/
 teste.csv
 teste.py
+ieee13bus/
+ieee34bus/
+ieee123bus/
+13busXY.csv

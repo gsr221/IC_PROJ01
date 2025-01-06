@@ -3,12 +3,13 @@ from odFunctions import DSS
 import tkinter as tk
 import consts as c
 from modeloAg import AG
+import time as t
 
 #==Constantes==#
 #Porcentagem de desequilíbrio#
 perc = 2
 #Número de repetições do AG#
-numReps = 2
+numReps = 50
 
 class AppFunctions():
     def __init__(self):
@@ -40,7 +41,8 @@ class AppFunctions():
         #==Remove as colunas que não serão utilizadas==#
         dfSeqVoltages = dfSeqVoltages.drop(['  p.u.', 'Base kV',' %V0/V1', ' Vresidual', ' %NEMA'], axis=1)
         #==Seleciona as barras com desequilíbrio maior que 2%==#
-        dfBarrasDeseq = dfSeqVoltages.loc[dfSeqVoltages[dfSeqVoltages.columns[3]] > perc]
+        #dfBarrasDeseq = dfSeqVoltages.loc[dfSeqVoltages[dfSeqVoltages.columns[3]] > perc]
+        dfBarrasDeseq = dfSeqVoltages
         
         #==Cria uma TreeView com as barras desequilibradas==#
         tv["column"] = list(dfBarrasDeseq)
@@ -55,6 +57,7 @@ class AppFunctions():
     
     #==Função para o botão de calcular equilíbrio==#
     def equilButtFun(self, tv, entryPma, entryPmb, entryPmc):
+        t1 = t.time()
         #==Recebe os valores de Pma, Pmb e Pmc==#
         pms = [entryPma.get(), entryPmb.get(), entryPmc.get()]
         
@@ -85,6 +88,8 @@ class AppFunctions():
         dicResultadoAg['Barramento'] = [self.barras[listaPotsBus[idx][2]] for idx in range(len(listaPotsBus))]
         
         dicResultadoAg['FOB'] = listaFobs
+        
+        print(dicResultadoAg)
 
         dfResultadoAg = pd.DataFrame(dicResultadoAg)
 
@@ -96,6 +101,8 @@ class AppFunctions():
         df_rows = dfResultadoAg.to_numpy().tolist()
         for row in df_rows:
             tv.insert("", "end", values=row)
+        t2 = t.time()
+        print(t2-t1)
 
         return None
 
