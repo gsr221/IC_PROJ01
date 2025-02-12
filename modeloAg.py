@@ -173,7 +173,7 @@ class AG():
         alfa = round(random.uniform(0, 1), 2)
         newIndiv1 = indiv1
         newIndiv2 = indiv2
-        #==Cria um novo indivíduo==#
+        #==Cria um novo indivíduo com a proporção alfa e alfa-1 dos genes dos pais==#
         for gene in range(len(indiv1)):
             # Use o valor de alfa conforme necessário
             newIndiv1[gene] = int(alfa*indiv1[gene] + (1-alfa)*indiv2[gene])
@@ -185,12 +185,17 @@ class AG():
     def cruzamentoFunBLX(self, indiv1, indiv2):
         newIndiv1 = indiv1
         newIndiv2 = indiv2
+        #==Recebe um valor de alfa aleatório==#
         alfa = random.uniform(0.3, 0.5)
+        #==Cria um novo indivíduo==#
         for gene in range(len(indiv1)):
+            #==calcula o delta==#
             delta = abs(indiv1[gene] - indiv2[gene])
+            #==Calcula o mínimo e o máximo==#
             minGene = int(min(indiv1[gene], indiv2[gene]) - alfa*delta)
             maxGene = int(max(indiv1[gene], indiv2[gene]) + alfa*delta)
             if minGene != maxGene:
+                #==Sorteia o novo gene entre o mínimo e o máximo==#
                 newIndiv1[gene] = random.randint(minGene, maxGene)
                 newIndiv2[gene] = random.randint(minGene, maxGene)
             else:
