@@ -74,6 +74,9 @@ class AppFunctions():
         results, log, dicMelhoresIndiv = self.ag.execAg(pms=pms, 
                                                         numRep=numReps)
         
+        print(dicMelhoresIndiv)
+        print('===========================================')
+        
         #=Cria o dicionario com as potencias em cada fase, barramento e valor da fob
         dicResultadoAg = {'Pot A':[], 'Pot B':[], 'Pot C':[], 'Barramento':[], 'FOB':[]}
         

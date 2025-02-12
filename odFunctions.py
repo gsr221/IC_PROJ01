@@ -82,6 +82,21 @@ class DSS():
             comando = "New Load.NEW"+str(fase+1)+" Bus1="+str(barramento)+"."+str(fase+1)+" Phases=1 Conn=Wye Model=1 kV="+str(round(kVBaseBarra, 2))+" kW="+str(listaPoten[fase])+" kvar=0"
             self.dssTxt.Command = comando
             
+    
+    def alocaCap(self, barramento, numCaps, fase, nome):
+        #==Limpa a memória do openDSS e compila o arquivo original novamente==#
+        self.clearAll()
+        self.compileFile(c.link_ieee13bus)
+        
+        #==Ativa o barramento desejado==#
+        self.dssCircuit.SetActiveBus(barramento)
+        #==Recebe a tensão base do barramento==#
+        kVBaseBarra = self.dssBus.kVBase
+        #==Aloca as potências no barramento==#
+        comando = "New Capacitor.CapADD"+nome+" Bus1="+str(barramento)+"."+str(fase)+" Phases=1 kV="+str(round(kVBaseBarra, 2))+" kvar="+str(numCaps*50)
+        self.dssTxt.Command = comando
+        #print(comando)
+            
             
     def distsBusses(self):
         dists = self.dssCircuit.AllBusDistances

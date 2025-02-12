@@ -14,18 +14,18 @@ class AG():
         creator.create("estrIndiv", list, fitness = creator.fitnessMulti)
         
     
-    #==Função objetivo==#
-    def FOB(self, indiv):
+    #==Função objetivo Bateria==#
+    def FOBBat(self, indiv):
         #==Recebe os valores de potência máxima e o barramento==#
-        barra = indiv[-1]
-        pots = indiv[:2]
-        pots.append(-pots[0]-pots[1])
+        barraBat = indiv[-1]
+        potsBat = indiv[:2]
+        potsBat.append(-potsBat[0]-potsBat[1])
         
         #==Verifica se o barramento é válido==#
-        if barra > len(self.barras)-1 or barra < 0: return 99999, 
+        if barraBat > len(self.barras)-1 or barraBat < 0: return 99999,
 
-        #==Aloca as potências no barramento e resolve o sistema==#
-        self.dss.alocaPot(barramento=self.barras[barra], listaPoten=pots)
+        #==Aloca as potências no barramento e os bancos de capacitores e resolve o sistema==#
+        self.dss.alocaPot(barramento=self.barras[barraBat], listaPoten=potsBat)
         self.dss.solve(1)
         
         #==Recebe as tensões de sequência e as coloca em um dicionário==#
@@ -33,45 +33,169 @@ class AG():
         dicSecVoltages = dfSeqVoltages.to_dict(orient = 'list')
         deseq = dicSecVoltages[' %V2/V1']
         
+        #==Recebe o valor da função objetivo==#
         fobVal = max(deseq)
         
+        #==Restrições==#
         restricoes = [
-            abs(pots[0]) - self.pmList[0],
-            abs(pots[1]) - self.pmList[1],
-            abs(-pots[0] - pots[1]) - self.pmList[2],
+            abs(potsBat[0]) - self.pmList[0],
+            abs(potsBat[1]) - self.pmList[1],
+            abs(-potsBat[0] - potsBat[1]) - self.pmList[2],
+            fobVal - 2
+        ]
+        #==Penalidade==#
+        penalidade = sum(max(0, restricao) for restricao in restricoes)
+        penalidadeVal = 1000
+        
+        return fobVal + penalidadeVal * penalidade,
+    
+    
+    def FOBBatCap(self, indiv):
+        #==Recebe os valores de potência máxima e o barramento==#
+        barraBat = indiv[-1]
+        potsBat = indiv[:2]
+        potsBat.append(-potsBat[0]-potsBat[1])
+        
+        #==Recebe os valores dos capacitores==#
+        barrasCaps = indiv[3:5]
+        numCaps = indiv[5:7]
+        fasesCaps = indiv[7:]
+        
+        #==Verifica se o barramento é válido==#
+        if barraBat > len(self.barras)-1 or barraBat < 0: return 99999,
+        #==Verifica se as barras e fases dos capacitores são válidas==#
+        for idx in range(len(barrasCaps)):
+            if barrasCaps[idx] > len(self.barras)-1 or barrasCaps[idx] < 0 or fasesCaps[idx] > 3 or fasesCaps[idx] < 1: return 99999,
+
+        #==Aloca as potências no barramento e os bancos de capacitores e resolve o sistema==#
+        self.dss.alocaPot(barramento=self.barras[barraBat], listaPoten=potsBat)
+        for idx in range(len(barrasCaps)):
+            self.dss.alocaCap(barramento=self.barras[barrasCaps[idx]], numCaps=numCaps[idx], fase=fasesCaps[idx], nome=str(numCaps[idx]*50)+'x'+str(idx))
+        
+        self.dss.solve(1)
+        
+        #==Recebe as tensões de sequência e as coloca em um dicionário==#
+        dfSeqVoltages = self.dss.dfSeqVolt()
+        dicSecVoltages = dfSeqVoltages.to_dict(orient = 'list')
+        deseq = dicSecVoltages[' %V2/V1']
+        
+        #==Recebe o valor da função objetivo==#
+        fobVal = max(deseq)
+        
+        #==Restrições==#
+        restricoes = [
+            abs(potsBat[0]) - self.pmList[0],
+            abs(potsBat[1]) - self.pmList[1],
+            abs(-potsBat[0] - potsBat[1]) - self.pmList[2],
             fobVal - 2
         ]
         
+        #==Penalidade==#
         penalidade = sum(max(0, restricao) for restricao in restricoes)
         penalidadeVal = 1000
         
         return fobVal + penalidadeVal * penalidade,
         
     
-    def criaCrom (self):
+    def FOBCap(self, indiv):
+        #==Recebe os valores dos capacitores==#
+        barra = indiv[0:3]
+        numCaps = indiv[3:5]
+        fase = indiv[5:]
+        
+        #==Verifica se o barramento é válido==#
+        for idx in range(len(barra)):
+            if barra[idx] > len(self.barras)-1 or barra[idx] < 0 or fase[idx] > 3 or fase[idx] < 1: return 99999,
+        
+        #==Aloca os bancos de capacitores e resolve o sistema==#
+        for idx in range(2):    
+            self.dss.alocaCap(barramento=self.barras[barra[idx]], numCaps=numCaps[idx], fase=fase[idx], nome=str(numCaps[idx]*50)+'_'+str(idx))
+        
+        self.dss.solve(1)
+        
+        #==Recebe as tensões de sequência e as coloca em um dicionário==#
+        dfSeqVoltages = self.dss.dfSeqVolt()
+        dicSecVoltages = dfSeqVoltages.to_dict(orient = 'list')
+        deseq = dicSecVoltages[' %V2/V1']
+        
+        #==Recebe o valor da função objetivo==#
+        fobVal = max(deseq)
+        
+        # restricoes = [
+        #     fobVal - 2
+        # ]
+        
+        # penalidade = sum(max(0, restricao) for restricao in restricoes)
+        # penalidadeVal = 1000
+        
+        return fobVal ,
+    
+    
+    #==Cria cromossomo para alocação de capacitores [barras / numCaps / fases]==#
+    def criaCromCap(self):
+        indiv = [random.randint(0, len(self.barras)), random.randint(0, len(self.barras)), random.randint(0, len(self.barras)),
+                random.randint(1, 25), random.randint(1, 25), random.randint(1, 25),
+                random.randint(1, 3), random.randint(1, 3), random.randint(1, 3)]
+        return indiv
+    
+    
+    #==Cria cromossomo para alocação de baterias e capacitores [pots / barramento / barras / numCaps / fases]==#
+    def criaCromBatCap(self):
+        g1 = random.randint(-self.pmList[0], self.pmList[0])
+        g2 = random.randint(-self.pmList[1], self.pmList[1])
+        indiv = [g1,
+                g2, 
+                random.randint(0,len(self.barras)),
+
+                random.randint(0, len(self.barras)), random.randint(0, len(self.barras)),
+                random.randint(1, 25), random.randint(1, 25),
+                random.randint(1, 3), random.randint(1, 3)]
+        return indiv
+    
+    
+    #==Cria cromossomo para alocação de baterias [pots / barramento]==#
+    def criaCromBat(self):
         g1 = random.randint(-self.pmList[0], self.pmList[0])
         g2 = random.randint(-self.pmList[1], self.pmList[1])
         indiv = [g1, 
                 g2, 
-                random.randint(0,len(self.barras))
-                ]
-        
+                random.randint(0,len(self.barras))]
         return indiv
     
     
     def mutateFun(self, indiv):
         indiv = self.criaCrom()
-        return indiv, 
+        return indiv
     
-    
-    def cruzamentoFun(self, indiv1, indiv2):
-        t = round(random.uniform(0, 1), 2)
+    #==Método de cruzamento alfa==#
+    def cruzamentoFunAlfa(self, indiv1, indiv2):
+        #==Recebe um valor de alfa aleatório==#
+        alfa = round(random.uniform(0, 1), 2)
         newIndiv1 = indiv1
         newIndiv2 = indiv2
+        #==Cria um novo indivíduo==#
         for gene in range(len(indiv1)):
-            # Use o valor de t conforme necessário
-            newIndiv1[gene] = int(t*indiv1[gene] + (1-t)*indiv2[gene])
-            newIndiv2[gene] = int((1-t)*indiv1[gene] + t*indiv2[gene])
+            # Use o valor de alfa conforme necessário
+            newIndiv1[gene] = int(alfa*indiv1[gene] + (1-alfa)*indiv2[gene])
+            newIndiv2[gene] = int((1-alfa)*indiv1[gene] + alfa*indiv2[gene])
+            
+        return newIndiv1, newIndiv2
+    
+    #==Método de cruzamento BLX==#
+    def cruzamentoFunBLX(self, indiv1, indiv2):
+        newIndiv1 = indiv1
+        newIndiv2 = indiv2
+        alfa = random.uniform(0.3, 0.5)
+        for gene in range(len(indiv1)):
+            delta = abs(indiv1[gene] - indiv2[gene])
+            minGene = int(min(indiv1[gene], indiv2[gene]) - alfa*delta)
+            maxGene = int(max(indiv1[gene], indiv2[gene]) + alfa*delta)
+            if minGene != maxGene:
+                newIndiv1[gene] = random.randint(minGene, maxGene)
+                newIndiv2[gene] = random.randint(minGene, maxGene)
+            else:
+                newIndiv1[gene] = minGene
+                newIndiv2[gene] = minGene
             
         return newIndiv1, newIndiv2
     
@@ -85,28 +209,29 @@ class AG():
         dicMelhoresIndiv = {"cromossomos": [],
                             "fobs": []}
         #Definindo maneiras de cruzamento e de mutação
-        toolbox.register("mate", self.cruzamentoFun)
+        toolbox.register("mate", self.cruzamentoFunBLX)
         toolbox.register("mutate", self.mutateFun)
         
         #Definindo o tipo de seleção
-        toolbox.register("select", tools.selTournament, tournsize=5)
+        toolbox.register("select", tools.selTournament, tournsize=10)
 
         #Definindo a fob e as restrições
-        toolbox.register("evaluate", self.FOB)
+        toolbox.register("evaluate", self.FOBBat)
 
-        for _ in range(numRep):
+        for rep in range(numRep):
             #Definindo como criar um indivíduo (cromossomo) com 4 genes inteiros
-            toolbox.register("indiv", tools.initIterate, creator.estrIndiv, self.criaCrom)
+            toolbox.register("indiv", tools.initIterate, creator.estrIndiv, self.criaCromBat)
 
             #Definindo a população
             toolbox.register("pop", tools.initRepeat, list, toolbox.indiv)
 
             #Criando uma população
-            populacao = toolbox.pop(n=15)
+            populacao = toolbox.pop(n=30)
 
             hof = tools.HallOfFame(1)
             result, log = algorithms.eaSimple(populacao, toolbox, cxpb=probCruz, mutpb=probMut, ngen=numGen, halloffame=hof, verbose=False)
             dicMelhoresIndiv["cromossomos"].append(hof[0])
             dicMelhoresIndiv["fobs"].append(hof[0].fitness.values[0])
+            print(f"Rep: {rep+1} - FOB: {hof[0].fitness.values[0]}")
         
         return result, log, dicMelhoresIndiv
